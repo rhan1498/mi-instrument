@@ -6,7 +6,6 @@
 Release notes:
 
 """
-from mi.core.instrument.data_particle import RawDataParticle
 
 __author__ = 'Sung Ahn'
 __license__ = 'Apache 2.0'
@@ -24,22 +23,23 @@ from mi.core.log import get_logger
 
 log = get_logger()
 
-from mi.instrument.kml.cam.test.test_driver import CAMDriverUnitTest
-from mi.instrument.kml.cam.test.test_driver import CAMDriverIntegrationTest
-from mi.instrument.kml.cam.test.test_driver import CAMDriverQualificationTest
-from mi.instrument.kml.cam.test.test_driver import CAMDriverPublicationTest
-from mi.instrument.kml.particles import DataParticleType, CAMDS_DISK_STATUS_KEY, CAMDS_HEALTH_STATUS_KEY, CAMDS_VIDEO,\
-                                        CAMDS_VIDEO_KEY
+from mi.idk.unit_test import InstrumentDriverUnitTestCase
+from mi.idk.unit_test import InstrumentDriverIntegrationTestCase
+from mi.idk.unit_test import InstrumentDriverQualificationTestCase
+from mi.idk.unit_test import InstrumentDriverPublicationTestCase
+
+from mi.instrument.kml.cam.camds.driver import DataParticleType, CAMDS_DISK_STATUS_KEY, CAMDS_HEALTH_STATUS_KEY, \
+                                        CAMDS_VIDEO, CAMDS_VIDEO_KEY
 
 from mi.idk.unit_test import DriverTestMixin
 
 from mi.idk.unit_test import DriverStartupConfigKey
-from mi.instrument.kml.driver import KMLParameter, ParameterIndex
 
-from mi.instrument.kml.cam.camds.driver import KMLPrompt, InstrumentDriver, Protocol
-from mi.instrument.kml.driver import KMLScheduledJob
-from mi.instrument.kml.driver import KMLCapability
-from mi.instrument.kml.cam.camds.driver import InstrumentCmds, ProtocolState, ProtocolEvent, Parameter, Capability
+from mi.instrument.kml.cam.camds.driver import Parameter, ParameterIndex
+from mi.instrument.kml.cam.camds.driver import CAMDSPrompt, InstrumentDriver, CAMDSProtocol
+from mi.instrument.kml.cam.camds.driver import ScheduledJob
+from mi.instrument.kml.cam.camds.driver import InstrumentCmds, ProtocolState, ProtocolEvent, Capability
+
 from mi.core.instrument.instrument_driver import DriverConnectionState
 from mi.core.instrument.instrument_driver import DriverProtocolState
 from mi.core.instrument.port_agent_client import PortAgentClient
@@ -48,14 +48,8 @@ from mi.core.port_agent_process import PortAgentProcess
 from mi.idk.comm_config import ConfigTypes
 from mi.idk.unit_test import InstrumentDriverTestCase, LOCALHOST, ParameterTestConfigKey
 
-from mi.idk.unit_test import InstrumentDriverIntegrationTestCase
-from mi.idk.unit_test import InstrumentDriverQualificationTestCase
-
-from mi.instrument.kml.driver import KMLProtocolState
-from mi.instrument.kml.driver import KMLProtocolEvent
 from mi.core.common import BaseEnum
 
-#from pyon.core.exception import ResourceError
 
 NEWLINE = '\r\n'
 
@@ -73,40 +67,40 @@ InstrumentDriverTestCase.initialize(
 
     driver_startup_config={
         DriverStartupConfigKey.PARAMETERS: {
-            KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY]: KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.KEY]: KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.CAMERA_GAIN[ParameterIndex.KEY]: KMLParameter.CAMERA_GAIN[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.CAMERA_MODE[ParameterIndex.KEY]: KMLParameter.CAMERA_MODE[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.COMPRESSION_RATIO[ParameterIndex.KEY]: KMLParameter.COMPRESSION_RATIO[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.FOCUS_POSITION[ParameterIndex.KEY]: KMLParameter.FOCUS_POSITION[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.FOCUS_SPEED[ParameterIndex.KEY]: KMLParameter.FOCUS_SPEED[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.FRAME_RATE[ParameterIndex.KEY]: KMLParameter.FRAME_RATE[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.IMAGE_RESOLUTION[ParameterIndex.KEY]: KMLParameter.IMAGE_RESOLUTION[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.IRIS_POSITION[ParameterIndex.KEY]: KMLParameter.IRIS_POSITION[ParameterIndex.DEFAULT_DATA],
+            Parameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY]: Parameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.DEFAULT_DATA],
+            Parameter.AUTO_CAPTURE_DURATION[ParameterIndex.KEY]: Parameter.AUTO_CAPTURE_DURATION[ParameterIndex.DEFAULT_DATA],
+            Parameter.CAMERA_GAIN[ParameterIndex.KEY]: Parameter.CAMERA_GAIN[ParameterIndex.DEFAULT_DATA],
+            Parameter.CAMERA_MODE[ParameterIndex.KEY]: Parameter.CAMERA_MODE[ParameterIndex.DEFAULT_DATA],
+            Parameter.COMPRESSION_RATIO[ParameterIndex.KEY]: Parameter.COMPRESSION_RATIO[ParameterIndex.DEFAULT_DATA],
+            Parameter.FOCUS_POSITION[ParameterIndex.KEY]: Parameter.FOCUS_POSITION[ParameterIndex.DEFAULT_DATA],
+            Parameter.FOCUS_SPEED[ParameterIndex.KEY]: Parameter.FOCUS_SPEED[ParameterIndex.DEFAULT_DATA],
+            Parameter.FRAME_RATE[ParameterIndex.KEY]: Parameter.FRAME_RATE[ParameterIndex.DEFAULT_DATA],
+            Parameter.IMAGE_RESOLUTION[ParameterIndex.KEY]: Parameter.IMAGE_RESOLUTION[ParameterIndex.DEFAULT_DATA],
+            Parameter.IRIS_POSITION[ParameterIndex.KEY]: Parameter.IRIS_POSITION[ParameterIndex.DEFAULT_DATA],
 
-            KMLParameter.LAMP_BRIGHTNESS[ParameterIndex.KEY]: KMLParameter.LAMP_BRIGHTNESS[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.NETWORK_DRIVE_LOCATION[ParameterIndex.KEY]: KMLParameter.NETWORK_DRIVE_LOCATION[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.NTP_SETTING[ParameterIndex.KEY]: KMLParameter.NTP_SETTING[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.PAN_POSITION[ParameterIndex.KEY]: KMLParameter.PAN_POSITION[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.PAN_SPEED[ParameterIndex.KEY]: KMLParameter.PAN_SPEED[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.PRESET_NUMBER[ParameterIndex.KEY]: KMLParameter.PRESET_NUMBER[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY]: KMLParameter.SAMPLE_INTERVAL[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.SHUTTER_SPEED[ParameterIndex.KEY]: KMLParameter.SHUTTER_SPEED[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.SOFT_END_STOPS[ParameterIndex.KEY]: KMLParameter.SOFT_END_STOPS[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.TILT_POSITION[ParameterIndex.KEY]: KMLParameter.TILT_POSITION[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.TILT_SPEED[ParameterIndex.KEY]: KMLParameter.TILT_SPEED[ParameterIndex.DEFAULT_DATA],
+            Parameter.LAMP_BRIGHTNESS[ParameterIndex.KEY]: Parameter.LAMP_BRIGHTNESS[ParameterIndex.DEFAULT_DATA],
+            Parameter.NETWORK_DRIVE_LOCATION[ParameterIndex.KEY]: Parameter.NETWORK_DRIVE_LOCATION[ParameterIndex.DEFAULT_DATA],
+            Parameter.NTP_SETTING[ParameterIndex.KEY]: Parameter.NTP_SETTING[ParameterIndex.DEFAULT_DATA],
+            Parameter.PAN_POSITION[ParameterIndex.KEY]: Parameter.PAN_POSITION[ParameterIndex.DEFAULT_DATA],
+            Parameter.PAN_SPEED[ParameterIndex.KEY]: Parameter.PAN_SPEED[ParameterIndex.DEFAULT_DATA],
+            Parameter.PRESET_NUMBER[ParameterIndex.KEY]: Parameter.PRESET_NUMBER[ParameterIndex.DEFAULT_DATA],
+            Parameter.SAMPLE_INTERVAL[ParameterIndex.KEY]: Parameter.SAMPLE_INTERVAL[ParameterIndex.DEFAULT_DATA],
+            Parameter.SHUTTER_SPEED[ParameterIndex.KEY]: Parameter.SHUTTER_SPEED[ParameterIndex.DEFAULT_DATA],
+            Parameter.SOFT_END_STOPS[ParameterIndex.KEY]: Parameter.SOFT_END_STOPS[ParameterIndex.DEFAULT_DATA],
+            Parameter.TILT_POSITION[ParameterIndex.KEY]: Parameter.TILT_POSITION[ParameterIndex.DEFAULT_DATA],
+            Parameter.TILT_SPEED[ParameterIndex.KEY]: Parameter.TILT_SPEED[ParameterIndex.DEFAULT_DATA],
 
-            KMLParameter.VIDEO_FORWARDING[ParameterIndex.KEY]: KMLParameter.VIDEO_FORWARDING[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY]: KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.WHEN_DISK_IS_FULL[ParameterIndex.KEY]: KMLParameter.WHEN_DISK_IS_FULL[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.ZOOM_POSITION[ParameterIndex.KEY]: KMLParameter.ZOOM_POSITION[ParameterIndex.DEFAULT_DATA],
-            KMLParameter.ZOOM_SPEED[ParameterIndex.KEY]: KMLParameter.ZOOM_SPEED[ParameterIndex.DEFAULT_DATA]
+            Parameter.VIDEO_FORWARDING[ParameterIndex.KEY]: Parameter.VIDEO_FORWARDING[ParameterIndex.DEFAULT_DATA],
+            Parameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY]: Parameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.DEFAULT_DATA],
+            Parameter.WHEN_DISK_IS_FULL[ParameterIndex.KEY]: Parameter.WHEN_DISK_IS_FULL[ParameterIndex.DEFAULT_DATA],
+            Parameter.ZOOM_POSITION[ParameterIndex.KEY]: Parameter.ZOOM_POSITION[ParameterIndex.DEFAULT_DATA],
+            Parameter.ZOOM_SPEED[ParameterIndex.KEY]: Parameter.ZOOM_SPEED[ParameterIndex.DEFAULT_DATA]
         },
         DriverStartupConfigKey.SCHEDULER: {
-            KMLScheduledJob.VIDEO_FORWARDING: {},
-            KMLScheduledJob.SAMPLE: {},
-            KMLScheduledJob.STATUS: {},
-            KMLScheduledJob.STOP_CAPTURE: {}
+            ScheduledJob.VIDEO_FORWARDING: {},
+            ScheduledJob.SAMPLE: {},
+            ScheduledJob.STATUS: {},
+            ScheduledJob.STOP_CAPTURE: {}
         }
     }
 )
@@ -137,7 +131,7 @@ class TeledynePrompt(BaseEnum):
 # This class defines a configuration structure for testing and common assert  #
 # methods for validating data particles.
 ###############################################################################
-class ADCPTMixin(DriverTestMixin):
+class CAMDSMixin(DriverTestMixin):
     """
     Mixin class used for storing data particle constance
     and common data assertion methods.
@@ -157,132 +151,133 @@ class ADCPTMixin(DriverTestMixin):
     ###
     _driver_parameters = {
 
-        KMLParameter.CAMERA_GAIN[ParameterIndex.KEY]:
+        Parameter.CAMERA_GAIN[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.CAMERA_GAIN[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.CAMERA_GAIN[ParameterIndex.D_DEFAULT]},
-        KMLParameter.CAMERA_MODE[ParameterIndex.KEY]:
+             DEFAULT: Parameter.CAMERA_GAIN[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.CAMERA_GAIN[ParameterIndex.D_DEFAULT]},
+        Parameter.CAMERA_MODE[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.CAMERA_MODE[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.CAMERA_MODE[ParameterIndex.D_DEFAULT]},
-        KMLParameter.COMPRESSION_RATIO[ParameterIndex.KEY]:
+             DEFAULT: Parameter.CAMERA_MODE[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.CAMERA_MODE[ParameterIndex.D_DEFAULT]},
+        Parameter.COMPRESSION_RATIO[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.COMPRESSION_RATIO[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.COMPRESSION_RATIO[ParameterIndex.D_DEFAULT]},
-        KMLParameter.FOCUS_POSITION[ParameterIndex.KEY]:
+             DEFAULT: Parameter.COMPRESSION_RATIO[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.COMPRESSION_RATIO[ParameterIndex.D_DEFAULT]},
+        Parameter.FOCUS_POSITION[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.FOCUS_POSITION[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.FOCUS_POSITION[ParameterIndex.D_DEFAULT]},
-        KMLParameter.FOCUS_SPEED[ParameterIndex.KEY]:
+             DEFAULT: Parameter.FOCUS_POSITION[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.FOCUS_POSITION[ParameterIndex.D_DEFAULT]},
+        Parameter.FOCUS_SPEED[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.FOCUS_SPEED[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.FOCUS_SPEED[ParameterIndex.D_DEFAULT]},
-        KMLParameter.FRAME_RATE[ParameterIndex.KEY]:
+             DEFAULT: Parameter.FOCUS_SPEED[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.FOCUS_SPEED[ParameterIndex.D_DEFAULT]},
+        Parameter.FRAME_RATE[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.FRAME_RATE[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.FRAME_RATE[ParameterIndex.D_DEFAULT]},
-        KMLParameter.IMAGE_RESOLUTION[ParameterIndex.KEY]:
+             DEFAULT: Parameter.FRAME_RATE[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.FRAME_RATE[ParameterIndex.D_DEFAULT]},
+        Parameter.IMAGE_RESOLUTION[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.IMAGE_RESOLUTION[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.IMAGE_RESOLUTION[ParameterIndex.D_DEFAULT]},
-        KMLParameter.IRIS_POSITION[ParameterIndex.KEY]:
+             DEFAULT: Parameter.IMAGE_RESOLUTION[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.IMAGE_RESOLUTION[ParameterIndex.D_DEFAULT]},
+        Parameter.IRIS_POSITION[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.IRIS_POSITION[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.IRIS_POSITION[ParameterIndex.D_DEFAULT]},
-        KMLParameter.LAMP_BRIGHTNESS[ParameterIndex.KEY]:
+             DEFAULT: Parameter.IRIS_POSITION[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.IRIS_POSITION[ParameterIndex.D_DEFAULT]},
+        Parameter.LAMP_BRIGHTNESS[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.LAMP_BRIGHTNESS[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.LAMP_BRIGHTNESS[ParameterIndex.D_DEFAULT]},
-        KMLParameter.NETWORK_DRIVE_LOCATION[ParameterIndex.KEY]:
+             DEFAULT: Parameter.LAMP_BRIGHTNESS[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.LAMP_BRIGHTNESS[ParameterIndex.D_DEFAULT]},
+        Parameter.NETWORK_DRIVE_LOCATION[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: False, STARTUP: True,
-             DEFAULT: KMLParameter.NETWORK_DRIVE_LOCATION[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.NETWORK_DRIVE_LOCATION[ParameterIndex.D_DEFAULT]},
-        KMLParameter.NTP_SETTING[ParameterIndex.KEY]:
+             DEFAULT: Parameter.NETWORK_DRIVE_LOCATION[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.NETWORK_DRIVE_LOCATION[ParameterIndex.D_DEFAULT]},
+        Parameter.NTP_SETTING[ParameterIndex.KEY]:
             {TYPE: str, READONLY: True, DA: True, STARTUP: False,
-             DEFAULT: KMLParameter.NTP_SETTING[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.NTP_SETTING[ParameterIndex.D_DEFAULT]},
-        KMLParameter.PAN_POSITION[ParameterIndex.KEY]:
+             DEFAULT: Parameter.NTP_SETTING[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.NTP_SETTING[ParameterIndex.D_DEFAULT]},
+        Parameter.PAN_POSITION[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.PAN_POSITION[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.PAN_POSITION[ParameterIndex.D_DEFAULT]},
-        KMLParameter.PAN_SPEED[ParameterIndex.KEY]:
+             DEFAULT: Parameter.PAN_POSITION[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.PAN_POSITION[ParameterIndex.D_DEFAULT]},
+        Parameter.PAN_SPEED[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.PAN_SPEED[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.PAN_SPEED[ParameterIndex.D_DEFAULT]},
-        KMLParameter.SHUTTER_SPEED[ParameterIndex.KEY]:
+             DEFAULT: Parameter.PAN_SPEED[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.PAN_SPEED[ParameterIndex.D_DEFAULT]},
+        Parameter.SHUTTER_SPEED[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.SHUTTER_SPEED[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.SHUTTER_SPEED[ParameterIndex.D_DEFAULT]},
-        KMLParameter.SOFT_END_STOPS[ParameterIndex.KEY]:
+             DEFAULT: Parameter.SHUTTER_SPEED[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.SHUTTER_SPEED[ParameterIndex.D_DEFAULT]},
+        Parameter.SOFT_END_STOPS[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.SOFT_END_STOPS[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.SOFT_END_STOPS[ParameterIndex.D_DEFAULT]},
-        KMLParameter.TILT_POSITION[ParameterIndex.KEY]:
+             DEFAULT: Parameter.SOFT_END_STOPS[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.SOFT_END_STOPS[ParameterIndex.D_DEFAULT]},
+        Parameter.TILT_POSITION[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.TILT_POSITION[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.TILT_POSITION[ParameterIndex.D_DEFAULT]},
-        KMLParameter.TILT_SPEED[ParameterIndex.KEY]:
+             DEFAULT: Parameter.TILT_POSITION[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.TILT_POSITION[ParameterIndex.D_DEFAULT]},
+        Parameter.TILT_SPEED[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.TILT_SPEED[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.TILT_SPEED[ParameterIndex.D_DEFAULT]},
-        KMLParameter.WHEN_DISK_IS_FULL[ParameterIndex.KEY]:
+             DEFAULT: Parameter.TILT_SPEED[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.TILT_SPEED[ParameterIndex.D_DEFAULT]},
+        Parameter.WHEN_DISK_IS_FULL[ParameterIndex.KEY]:
             {TYPE: str, READONLY: True, DA: True, STARTUP: False,
-             DEFAULT: KMLParameter.WHEN_DISK_IS_FULL[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.WHEN_DISK_IS_FULL[ParameterIndex.D_DEFAULT]},
-        KMLParameter.ZOOM_POSITION[ParameterIndex.KEY]:
+             DEFAULT: Parameter.WHEN_DISK_IS_FULL[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.WHEN_DISK_IS_FULL[ParameterIndex.D_DEFAULT]},
+        Parameter.ZOOM_POSITION[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.ZOOM_POSITION[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.ZOOM_POSITION[ParameterIndex.D_DEFAULT]},
-        KMLParameter.ZOOM_SPEED[ParameterIndex.KEY]:
+             DEFAULT: Parameter.ZOOM_POSITION[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.ZOOM_POSITION[ParameterIndex.D_DEFAULT]},
+        Parameter.ZOOM_SPEED[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: True, STARTUP: True,
-             DEFAULT: KMLParameter.ZOOM_SPEED[ParameterIndex.D_DEFAULT],
-                                    VALUE: KMLParameter.ZOOM_SPEED[ParameterIndex.D_DEFAULT]},
+             DEFAULT: Parameter.ZOOM_SPEED[ParameterIndex.D_DEFAULT],
+                                    VALUE: Parameter.ZOOM_SPEED[ParameterIndex.D_DEFAULT]},
 
         # Engineering parameters
-        KMLParameter.PRESET_NUMBER[ParameterIndex.KEY]:
+        Parameter.PRESET_NUMBER[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: False, STARTUP: True,
-             DEFAULT: KMLParameter.PRESET_NUMBER[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.PRESET_NUMBER[ParameterIndex.D_DEFAULT]},
-        KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY]:
+             DEFAULT: Parameter.PRESET_NUMBER[ParameterIndex.DEFAULT_DATA],
+                                    VALUE: Parameter.PRESET_NUMBER[ParameterIndex.D_DEFAULT]},
+        Parameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: False, STARTUP: True,
-             DEFAULT: KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.D_DEFAULT]},
-        KMLParameter.VIDEO_FORWARDING[ParameterIndex.KEY]:
+             DEFAULT: Parameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.DEFAULT_DATA],
+                                    VALUE: Parameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.D_DEFAULT]},
+        Parameter.VIDEO_FORWARDING[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: False, STARTUP: True,
-             DEFAULT: KMLParameter.VIDEO_FORWARDING[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.VIDEO_FORWARDING[ParameterIndex.D_DEFAULT]},
-        KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY]:
+             DEFAULT: Parameter.VIDEO_FORWARDING[ParameterIndex.DEFAULT_DATA],
+                                    VALUE: Parameter.VIDEO_FORWARDING[ParameterIndex.D_DEFAULT]},
+        Parameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: False, STARTUP: True,
-             DEFAULT: KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.D_DEFAULT]},
-        KMLParameter.SAMPLE_INTERVAL[ParameterIndex.KEY]:
+             DEFAULT: Parameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.DEFAULT_DATA],
+                                    VALUE: Parameter.VIDEO_FORWARDING_TIMEOUT[ParameterIndex.D_DEFAULT]},
+        Parameter.SAMPLE_INTERVAL[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: False, STARTUP: True,
-             DEFAULT: KMLParameter.SAMPLE_INTERVAL[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.SAMPLE_INTERVAL[ParameterIndex.D_DEFAULT]},
-        KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.KEY]:
+             DEFAULT: Parameter.SAMPLE_INTERVAL[ParameterIndex.DEFAULT_DATA],
+                                    VALUE: Parameter.SAMPLE_INTERVAL[ParameterIndex.D_DEFAULT]},
+        Parameter.AUTO_CAPTURE_DURATION[ParameterIndex.KEY]:
             {TYPE: str, READONLY: False, DA: False, STARTUP: True,
-             DEFAULT: KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.DEFAULT_DATA],
-                                    VALUE: KMLParameter.AUTO_CAPTURE_DURATION[ParameterIndex.D_DEFAULT]}
+             DEFAULT: Parameter.AUTO_CAPTURE_DURATION[ParameterIndex.DEFAULT_DATA],
+                                    VALUE: Parameter.AUTO_CAPTURE_DURATION[ParameterIndex.D_DEFAULT]}
     }
 
     _driver_capabilities = {
         # capabilities defined in the IOS
-        KMLCapability.START_AUTOSAMPLE: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
-        KMLCapability.STOP_AUTOSAMPLE: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
-        KMLCapability.STOP_CAPTURE: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
-        KMLCapability.START_CAPTURE: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
-        KMLCapability.ACQUIRE_STATUS: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
-        KMLCapability.GOTO_PRESET: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
-        KMLCapability.SET_PRESET: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
-        KMLCapability.LAMP_OFF: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
-        KMLCapability.LAMP_ON: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
-        KMLCapability.LASER_1_OFF: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
-        KMLCapability.LASER_1_ON: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
-        KMLCapability.LASER_2_OFF: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
-        KMLCapability.LASER_2_ON: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
-        KMLCapability.LASER_BOTH_OFF: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
-        KMLCapability.LASER_BOTH_ON: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
-        KMLCapability.ACQUIRE_SAMPLE: {STATES: [KMLProtocolState.COMMAND, KMLProtocolState.AUTOSAMPLE]},
+        Capability.START_AUTOSAMPLE: {STATES: [ProtocolState.COMMAND, ProtocolState.AUTOSAMPLE]},
+        Capability.STOP_AUTOSAMPLE: {STATES: [ProtocolState.COMMAND, ProtocolState.AUTOSAMPLE]},
+        Capability.STOP_CAPTURE: {STATES: [ProtocolState.COMMAND, ProtocolState.AUTOSAMPLE]},
+        #Capability.START_CAPTURE: {STATES: [ProtocolState.COMMAND, ProtocolState.AUTOSAMPLE]},
+        Capability.ACQUIRE_STATUS: {STATES: [ProtocolState.COMMAND, ProtocolState.AUTOSAMPLE]},
+        Capability.GOTO_PRESET: {STATES: [ProtocolState.COMMAND, ProtocolState.AUTOSAMPLE]},
+        Capability.SET_PRESET: {STATES: [ProtocolState.COMMAND, ProtocolState.AUTOSAMPLE]},
+        Capability.LAMP_OFF: {STATES: [ProtocolState.COMMAND, ProtocolState.AUTOSAMPLE]},
+        Capability.LAMP_ON: {STATES: [ProtocolState.COMMAND, ProtocolState.AUTOSAMPLE]},
+        Capability.LASER_1_OFF: {STATES: [ProtocolState.COMMAND, ProtocolState.AUTOSAMPLE]},
+        Capability.LASER_1_ON: {STATES: [ProtocolState.COMMAND, ProtocolState.AUTOSAMPLE]},
+        Capability.LASER_2_OFF: {STATES: [ProtocolState.COMMAND, ProtocolState.AUTOSAMPLE]},
+        Capability.LASER_2_ON: {STATES: [ProtocolState.COMMAND, ProtocolState.AUTOSAMPLE]},
+        Capability.LASER_BOTH_OFF: {STATES: [ProtocolState.COMMAND, ProtocolState.AUTOSAMPLE]},
+        Capability.LASER_BOTH_ON: {STATES: [ProtocolState.COMMAND, ProtocolState.AUTOSAMPLE]},
+        Capability.ACQUIRE_SAMPLE: {STATES: [ProtocolState.COMMAND, ProtocolState.AUTOSAMPLE]},
+        Capability.EXECUTE_AUTO_CAPTURE: {STATES: [ProtocolState.COMMAND, ProtocolState.AUTOSAMPLE]},
     }
 
     VIDEO_STREAM = (
@@ -427,8 +422,8 @@ class ADCPTMixin(DriverTestMixin):
 
     def assert_health_data(self, data_particle, verify_values=True):
         """
-        Verify an adcpt pt2 data particle
-        @param data_particle: ADCPT_PT2 DataParticle data particle
+        Verify CAMDS health status data particle
+        @param data_particle: CAMDS health status DataParticle
         @param verify_values: bool, should we verify parameter values
         """
         self.assert_data_particle_header(data_particle, DataParticleType.CAMDS_HEALTH_STATUS)
@@ -436,8 +431,8 @@ class ADCPTMixin(DriverTestMixin):
 
     def assert_disk_data(self, data_particle, verify_values=True):
         """
-        Verify an adcpt pt4 data particle
-        @param data_particle: ADCPT_PT4 DataParticle data particle
+        Verify CAMDS disk status data particle
+        @param data_particle: CAMDS disk status data particle
         @param verify_values: bool, should we verify parameter values
         """
         self.assert_data_particle_header(data_particle, DataParticleType.CAMDS_DISK_STATUS)
@@ -449,9 +444,9 @@ class ADCPTMixin(DriverTestMixin):
 #         Unit tests test the method calls and parameters using Mock.         #
 ###############################################################################
 @attr('UNIT', group='mi')
-class UnitFromIDK(CAMDriverUnitTest, ADCPTMixin):
+class DriverUnitTest(InstrumentDriverUnitTestCase, CAMDSMixin):
     def setUp(self):
-        CAMDriverUnitTest.setUp(self)
+        InstrumentDriverUnitTestCase.setUp(self)
 
     def assert_initialize_driver(self, driver, initial_protocol_state=DriverProtocolState.COMMAND):
         """
@@ -473,7 +468,7 @@ class UnitFromIDK(CAMDriverUnitTest, ADCPTMixin):
         # that the driver transitions to that state
         config = {'Driver': {'mock_port_agent': Mock(spec=PortAgentClient)},
                   'Stream': {'mock_port_agent': Mock(spec=PortAgentClient)}}
-        driver.configure(config=config)
+        driver.configure(config=config['Driver'])
 
         current_state = driver.get_resource_state()
         self.assertEqual(current_state, DriverConnectionState.DISCONNECTED)
@@ -516,15 +511,12 @@ class UnitFromIDK(CAMDriverUnitTest, ADCPTMixin):
         Verify the set of parameters known by the driver
         """
         driver = InstrumentDriver(self._got_data_event_callback)
-        self.assert_initialize_driver(driver, KMLProtocolState.COMMAND)
+        self.assert_initialize_driver(driver, ProtocolState.COMMAND)
 
         expected_parameters = sorted(self._driver_parameters.keys())
 
         expected_parameters = sorted(expected_parameters)
-        reported_parameters = sorted(driver.get_resource(KMLParameter.ALL))
-
-        #print("*** Expected Parameters: %s" % expected_parameters)
-        #print("*** Reported Parameters: %s" % reported_parameters)
+        reported_parameters = sorted(driver.get_resource(Parameter.ALL))
 
         self.assertEqual(reported_parameters, expected_parameters)
 
@@ -542,7 +534,7 @@ class UnitFromIDK(CAMDriverUnitTest, ADCPTMixin):
         self.assert_enum_has_no_duplicates(ProtocolEvent())
         self.assert_enum_has_no_duplicates(Parameter())
         self.assert_enum_has_no_duplicates(DataParticleType())
-        self.assert_enum_has_no_duplicates(KMLScheduledJob())
+        self.assert_enum_has_no_duplicates(ScheduledJob())
         # Test capabilities for duplicates, them verify that capabilities is a subset of proto events
         self.assert_enum_has_no_duplicates(Capability())
         self.assert_enum_complete(Capability(), ProtocolEvent())
@@ -551,7 +543,7 @@ class UnitFromIDK(CAMDriverUnitTest, ADCPTMixin):
         """
         Test the chunker and verify the particles created.
         """
-        chunker = StringChunker(Protocol.sieve_function)
+        chunker = StringChunker(CAMDSProtocol.sieve_function)
 
         self.assert_chunker_sample(chunker, self._health_data)
         self.assert_chunker_sample_with_noise(chunker, self._health_data)
@@ -591,9 +583,9 @@ class UnitFromIDK(CAMDriverUnitTest, ADCPTMixin):
         Test silly made up capabilities to verify they are blocked by filter.
         """
         my_event_callback = Mock(spec="UNKNOWN WHAT SHOULD GO HERE FOR evt_callback")
-        protocol = Protocol(KMLPrompt, NEWLINE, my_event_callback)
-        driver_capabilities = KMLCapability().list()
-        test_capabilities = KMLCapability().list()
+        protocol = CAMDSProtocol(CAMDSPrompt, NEWLINE, my_event_callback)
+        driver_capabilities = Capability().list()
+        test_capabilities = Capability().list()
 
         #Add a bogus capability that will be filtered out.
         test_capabilities.append("BOGUS_CAPABILITY")
@@ -610,7 +602,7 @@ class UnitFromIDK(CAMDriverUnitTest, ADCPTMixin):
 #     and common for all drivers (minimum requirement for ION ingestion)      #
 ###############################################################################
 @attr('INT', group='mi')
-class IntFromIDK(CAMDriverIntegrationTest, ADCPTMixin):
+class DriverIntegrationTest(InstrumentDriverIntegrationTestCase, CAMDSMixin):
     _tested = {}
 
     def setUp(self):
@@ -619,8 +611,8 @@ class IntFromIDK(CAMDriverIntegrationTest, ADCPTMixin):
 
     def assert_disk_status(self, data_particle, verify_values=True):
         """
-        Verify an adcpt pT4 data particle
-        @param data_particle: ADCPT_PT4DataParticle data particle
+        Verify a disk status particle
+        @param data_particle: CAMDS disk status particle
         @param verify_values: bool, should we verify parameter values
         """
         self.assert_data_particle_header(data_particle, DataParticleType.CAMDS_DISK_STATUS)
@@ -628,8 +620,8 @@ class IntFromIDK(CAMDriverIntegrationTest, ADCPTMixin):
 
     def assert_health_status(self, data_particle, verify_values=True):
         """
-        Verify an adcpt PT2 data particle
-        @param data_particle: ADCPT_PT2DataParticle data particle
+        Verify a health status particle
+        @param data_particle: CAMDS health status particle
         @param verify_values: bool, should we verify parameter values
         """
         self.assert_data_particle_header(data_particle, DataParticleType.CAMDS_HEALTH_STATUS)
@@ -637,8 +629,8 @@ class IntFromIDK(CAMDriverIntegrationTest, ADCPTMixin):
 
     def assert_sample_meta(self, data_particle, verify_values=True):
         """
-        Verify an adcpt PT2 data particle
-        @param data_particle: ADCPT_PT2DataParticle data particle
+        Verify an image meta particle
+        @param data_particle: CAMDS image meta data particle
         @param verify_values: bool, should we verify parameter values
         """
         self.assert_data_particle_header(data_particle, DataParticleType.CAMDS_IMAGE_METADATA)
@@ -657,7 +649,6 @@ class IntFromIDK(CAMDriverIntegrationTest, ADCPTMixin):
         """
         self.assert_async_particle_generation(DataParticleType.CAMDS_IMAGE_METADATA, self.assert_sample_meta,
                                               timeout=60)
-
 
     def create_multi_comm_config(self, comm_config):
         result = {}
@@ -794,9 +785,9 @@ class IntFromIDK(CAMDriverIntegrationTest, ADCPTMixin):
         self.assertEqual(self.events, events)
 
         # Test the exception mechanism.
-        with self.assertRaises(ResourceError):
-            exception_str = 'Oh no, something bad happened!'
-            self.driver_client.cmd_dvr('test_exceptions', exception_str)
+        # with self.assertRaises(ResourceError):
+        #     exception_str = 'Oh no, something bad happened!'
+        #     self.driver_client.cmd_dvr('test_exceptions', exception_str)
 
     #Set bulk params and test auto sampling
     def test_autosample_particle_generation(self):
@@ -835,63 +826,63 @@ class IntFromIDK(CAMDriverIntegrationTest, ADCPTMixin):
         ####
         # First test in command mode
         ####
-        self.assert_driver_command(KMLProtocolEvent.ACQUIRE_STATUS)
-        self.assert_driver_command(KMLProtocolEvent.START_AUTOSAMPLE, state=KMLProtocolState.AUTOSAMPLE,
+        self.assert_driver_command(ProtocolEvent.ACQUIRE_STATUS)
+        self.assert_driver_command(ProtocolEvent.START_AUTOSAMPLE, state=ProtocolState.AUTOSAMPLE,
                                    delay=20)
-        self.assert_driver_command(KMLProtocolEvent.STOP_AUTOSAMPLE, state=KMLProtocolState.COMMAND, delay=1)
-        self.assert_driver_command(KMLProtocolEvent.ACQUIRE_STATUS, delay = 2)
+        self.assert_driver_command(ProtocolEvent.STOP_AUTOSAMPLE, state=ProtocolState.COMMAND, delay=1)
+        self.assert_driver_command(ProtocolEvent.ACQUIRE_STATUS, delay = 2)
         self.assert_acquire_status ()
 
-        self.assert_driver_command(KMLProtocolEvent.ACQUIRE_SAMPLE, delay = 2)
+        self.assert_driver_command(ProtocolEvent.ACQUIRE_SAMPLE, delay = 2)
         self.assert_acquire_sample()
-        self.assert_driver_command(KMLProtocolEvent.GOTO_PRESET)
-        self.assert_driver_command(KMLProtocolEvent.SET_PRESET)
-        self.assert_driver_command(KMLProtocolEvent.STOP_FORWARD)
-        self.assert_driver_command(KMLProtocolEvent.LAMP_ON)
-        self.assert_driver_command(KMLProtocolEvent.LAMP_OFF)
-        self.assert_driver_command(KMLProtocolEvent.LASER_1_ON)
-        self.assert_driver_command(KMLProtocolEvent.LASER_2_ON)
-        self.assert_driver_command(KMLProtocolEvent.LASER_1_OFF)
-        self.assert_driver_command(KMLProtocolEvent.LASER_2_OFF)
-        self.assert_driver_command(KMLProtocolEvent.LASER_BOTH_ON)
-        self.assert_driver_command(KMLProtocolEvent.LASER_BOTH_OFF)
+        self.assert_driver_command(ProtocolEvent.GOTO_PRESET)
+        self.assert_driver_command(ProtocolEvent.SET_PRESET)
+        self.assert_driver_command(ProtocolEvent.STOP_FORWARD)
+        self.assert_driver_command(ProtocolEvent.LAMP_ON)
+        self.assert_driver_command(ProtocolEvent.LAMP_OFF)
+        self.assert_driver_command(ProtocolEvent.LASER_1_ON)
+        self.assert_driver_command(ProtocolEvent.LASER_2_ON)
+        self.assert_driver_command(ProtocolEvent.LASER_1_OFF)
+        self.assert_driver_command(ProtocolEvent.LASER_2_OFF)
+        self.assert_driver_command(ProtocolEvent.LASER_BOTH_ON)
+        self.assert_driver_command(ProtocolEvent.LASER_BOTH_OFF)
 
         # ####
         # # Test in streaming mode
         # ####
         # # Put us in streaming
-        self.assert_driver_command(KMLProtocolEvent.START_AUTOSAMPLE, state=KMLProtocolState.AUTOSAMPLE,
+        self.assert_driver_command(ProtocolEvent.START_AUTOSAMPLE, state=ProtocolState.AUTOSAMPLE,
                                    delay=1)
-        self.assert_driver_command(KMLProtocolEvent.ACQUIRE_STATUS, delay =2)
+        self.assert_driver_command(ProtocolEvent.ACQUIRE_STATUS, delay =2)
         self.assert_acquire_status ()
 
-        self.assert_driver_command(KMLProtocolEvent.ACQUIRE_SAMPLE, delay = 2)
+        self.assert_driver_command(ProtocolEvent.ACQUIRE_SAMPLE, delay = 2)
         self.assert_acquire_sample()
-        self.assert_driver_command(KMLProtocolEvent.GOTO_PRESET)
-        self.assert_driver_command(KMLProtocolEvent.SET_PRESET)
-        self.assert_driver_command(KMLProtocolEvent.STOP_FORWARD)
-        self.assert_driver_command(KMLProtocolEvent.LAMP_ON)
-        self.assert_driver_command(KMLProtocolEvent.LAMP_OFF)
-        self.assert_driver_command(KMLProtocolEvent.LASER_1_ON)
-        self.assert_driver_command(KMLProtocolEvent.LASER_2_ON)
-        self.assert_driver_command(KMLProtocolEvent.LASER_1_OFF)
-        self.assert_driver_command(KMLProtocolEvent.LASER_2_OFF)
-        self.assert_driver_command(KMLProtocolEvent.LASER_BOTH_ON)
-        self.assert_driver_command(KMLProtocolEvent.LASER_BOTH_OFF)
+        self.assert_driver_command(ProtocolEvent.GOTO_PRESET)
+        self.assert_driver_command(ProtocolEvent.SET_PRESET)
+        self.assert_driver_command(ProtocolEvent.STOP_FORWARD)
+        self.assert_driver_command(ProtocolEvent.LAMP_ON)
+        self.assert_driver_command(ProtocolEvent.LAMP_OFF)
+        self.assert_driver_command(ProtocolEvent.LASER_1_ON)
+        self.assert_driver_command(ProtocolEvent.LASER_2_ON)
+        self.assert_driver_command(ProtocolEvent.LASER_1_OFF)
+        self.assert_driver_command(ProtocolEvent.LASER_2_OFF)
+        self.assert_driver_command(ProtocolEvent.LASER_BOTH_ON)
+        self.assert_driver_command(ProtocolEvent.LASER_BOTH_OFF)
 
-        self.assert_driver_command(KMLProtocolEvent.STOP_AUTOSAMPLE, state=KMLProtocolState.COMMAND, delay=1)
+        self.assert_driver_command(ProtocolEvent.STOP_AUTOSAMPLE, state=ProtocolState.COMMAND, delay=1)
 
     def test_scheduled_acquire_status_command(self):
         """
         Verify the scheduled clock sync is triggered and functions as expected
         """
         self.assert_initialize_driver()
-        self.assert_set(KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY], '00:00:07')
+        self.assert_set(Parameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY], '00:00:07')
         time.sleep(15)
         self.assert_acquire_status()
 
-        self.assert_set(KMLParameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY], '00:00:00')
-        self.assert_current_state(KMLProtocolState.COMMAND)
+        self.assert_set(Parameter.ACQUIRE_STATUS_INTERVAL[ParameterIndex.KEY], '00:00:00')
+        self.assert_current_state(ProtocolState.COMMAND)
 
     # @unittest.skip('It takes many hours for this test')
     def test_scheduled_acquire_status_autosample(self):
@@ -900,16 +891,16 @@ class IntFromIDK(CAMDriverIntegrationTest, ADCPTMixin):
         """
 
         self.assert_initialize_driver()
-        self.assert_current_state(KMLProtocolState.COMMAND)
-        self.assert_set(KMLParameter.SAMPLE_INTERVAL, '00:00:04')
-        self.assert_driver_command(KMLProtocolEvent.START_AUTOSAMPLE)
-        self.assert_current_state(KMLProtocolState.AUTOSAMPLE)
+        self.assert_current_state(ProtocolState.COMMAND)
+        self.assert_set(Parameter.SAMPLE_INTERVAL, '00:00:04')
+        self.assert_driver_command(ProtocolEvent.START_AUTOSAMPLE)
+        self.assert_current_state(ProtocolState.AUTOSAMPLE)
         time.sleep(10)
         self.assert_acquire_sample()
-        self.assert_driver_command(KMLProtocolEvent.STOP_AUTOSAMPLE)
-        self.assert_current_state(KMLProtocolState.COMMAND)
-        self.assert_set(KMLParameter.SAMPLE_INTERVAL, '00:00:00')
-        self.assert_current_state(KMLProtocolState.COMMAND)
+        self.assert_driver_command(ProtocolEvent.STOP_AUTOSAMPLE)
+        self.assert_current_state(ProtocolState.COMMAND)
+        self.assert_set(Parameter.SAMPLE_INTERVAL, '00:00:00')
+        self.assert_current_state(ProtocolState.COMMAND)
 
     def test_scheduled_capture(self):
         """
@@ -917,13 +908,13 @@ class IntFromIDK(CAMDriverIntegrationTest, ADCPTMixin):
         """
 
         self.assert_initialize_driver()
-        self.assert_current_state(KMLProtocolState.COMMAND)
-        self.assert_set(KMLParameter.AUTO_CAPTURE_DURATION, '00:00:02')
-        self.assert_driver_command(KMLProtocolEvent.START_CAPTURE)
+        self.assert_current_state(ProtocolState.COMMAND)
+        self.assert_set(Parameter.AUTO_CAPTURE_DURATION, '00:00:02')
+        self.assert_driver_command(InstrumentCmds.START_CAPTURE)
         time.sleep(1)
         self.assert_acquire_sample()
         time.sleep(2)
-        self.assert_current_state(KMLProtocolState.COMMAND)
+        self.assert_current_state(ProtocolState.COMMAND)
 
     #@unittest.skip('It takes time')
     def test_acquire_status(self):
@@ -932,7 +923,7 @@ class IntFromIDK(CAMDriverIntegrationTest, ADCPTMixin):
         """
 
         self.assert_initialize_driver()
-        self.assert_driver_command(KMLProtocolEvent.ACQUIRE_STATUS)
+        self.assert_driver_command(ProtocolEvent.ACQUIRE_STATUS)
         self.assert_acquire_status()
 
 
@@ -942,7 +933,7 @@ class IntFromIDK(CAMDriverIntegrationTest, ADCPTMixin):
 # testing device specific capabilities                                        #
 ###############################################################################
 @attr('QUAL', group='mi')
-class QualFromIDK(CAMDriverQualificationTest, ADCPTMixin):
+class DriverQualificationTest(InstrumentDriverQualificationTestCase, CAMDSMixin):
     def setUp(self):
         InstrumentDriverQualificationTestCase.setUp(self)
 
@@ -1045,7 +1036,7 @@ class QualFromIDK(CAMDriverQualificationTest, ADCPTMixin):
         """
 
         self.assert_enter_command_mode()
-        self.assert_set_parameter(KMLParameter.CAMERA_GAIN, 9)
+        self.assert_set_parameter(Parameter.CAMERA_GAIN, 9)
 
         # go into direct access, and muck up a setting.
         self.assert_direct_access_start_telnet(timeout=600)
@@ -1059,7 +1050,7 @@ class QualFromIDK(CAMDriverQualificationTest, ADCPTMixin):
         # verify the setting got restored.
         self.assert_enter_command_mode()
         # Direct access is true, it should be set before
-        self.assert_get_parameter(KMLParameter.CAMERA_GAIN, 9)
+        self.assert_get_parameter(Parameter.CAMERA_GAIN, 9)
 
     # Direct access to slave
     def test_direct_access_telnet_mode_slave(self):
@@ -1069,7 +1060,7 @@ class QualFromIDK(CAMDriverQualificationTest, ADCPTMixin):
         """
 
         self.assert_enter_command_mode()
-        self.assert_set_parameter(KMLParameter.CAMERA_MODE, 9)
+        self.assert_set_parameter(Parameter.CAMERA_MODE, 9)
 
         # go into direct access, and muck up a setting.
         self.assert_direct_access_start_telnet(timeout=600)
@@ -1083,7 +1074,7 @@ class QualFromIDK(CAMDriverQualificationTest, ADCPTMixin):
         # verify the setting got restored.
         self.assert_enter_command_mode()
         # Direct access is true, it should be set before
-        self.assert_get_parameter(KMLParameter.CAMERA_MODE, 9)
+        self.assert_get_parameter(Parameter.CAMERA_MODE, 9)
 
 
 ###############################################################################
@@ -1092,5 +1083,5 @@ class QualFromIDK(CAMDriverQualificationTest, ADCPTMixin):
 # testing device specific capabilities                                        #
 ###############################################################################
 @attr('PUB', group='mi')
-class PubFromIDK(CAMDriverPublicationTest):
+class DriverPublicationTest(InstrumentDriverPublicationTestCase):
     pass
