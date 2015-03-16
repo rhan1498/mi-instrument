@@ -56,6 +56,7 @@ DEFAULT_CMD_TIMEOUT = 20
 DEFAULT_WRITE_DELAY = 0
 
 ZERO_TIME_INTERVAL = '00:00:00'
+MIN_SAMPLE_INTERVAL = 35
 RE_PATTERN = type(re.compile(""))
 
 DEFAULT_DICT_TIMEOUT = 30
@@ -594,8 +595,8 @@ class Parameter(DriverParameter):
     FOCUS_POSITION = ('FG', '<\x03:FP:>', 1, 1, '\x64', 'Focus Position', 'between 0 and 200', 'FOCUS_POSITION', 100)
 
     # Engineering parameters for the scheduled commands
-    SAMPLE_INTERVAL = (None, None, None, None, '00:00:30', 'Sample Interval',
-                       'hh:mm:ss', 'SAMPLE_INTERVAL', '00:00:30')
+    SAMPLE_INTERVAL = (None, None, None, None, '00:30:00', 'Sample Interval',
+                       'hh:mm:ss', 'SAMPLE_INTERVAL', '00:30:00')
     ACQUIRE_STATUS_INTERVAL = (None, None, None, None, '00:00:00', 'Acquire Status Interval',
                                'hh:mm:ss', 'ACQUIRE_STATUS_INTERVAL', '00:00:00')
     VIDEO_FORWARDING = (None, None, None, None, False, 'Video Forwarding Flag',
@@ -1932,6 +1933,12 @@ class CAMDSProtocol(CommandResponseInstrumentProtocol):
         hours = interval[0]
         minutes = interval[1]
         seconds = interval[2]
+
+        # enforce a minimum sample interval of 35 seconds to prevent instrument from choking
+        if hours == '00' and minutes == '00' and seconds != '00':
+            if int(seconds) < MIN_SAMPLE_INTERVAL:
+                seconds = str(MIN_SAMPLE_INTERVAL)
+
         log.debug("Setting scheduled interval to: %s %s %s", hours, minutes, seconds)
 
         if hours == '00' and minutes == '00' and seconds == '00':
@@ -2022,15 +2029,13 @@ class CAMDSProtocol(CommandResponseInstrumentProtocol):
         result = None
         kwargs['timeout'] = 30
 
-        log.error("Inside _handler_command_start_autosample")
-
         # first stop scheduled sampling
         self.stop_scheduled_job(ScheduledJob.SAMPLE)
 
         # start scheduled event for Sampling only if the interval is not "00:00:00
         sample_interval = self._param_dict.get(Parameter.SAMPLE_INTERVAL[ParameterIndex.KEY])
 
-        log.error("Sample Interval is %s" % sample_interval)
+        log.debug("Sample Interval is %s" % sample_interval)
 
         if sample_interval != ZERO_TIME_INTERVAL:
             self.start_scheduled_job(Parameter.SAMPLE_INTERVAL[ParameterIndex.KEY], ScheduledJob.SAMPLE,
